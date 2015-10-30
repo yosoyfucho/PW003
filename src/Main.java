@@ -8,6 +8,13 @@
  *
  */
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Scanner;
 public class Main {
@@ -23,10 +30,14 @@ public class Main {
 
 	/**
 	 * @param args
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		// TODO Auto-generated method stub
 
+		PublicKey publicKey = null;
+		PrivateKey privateKey = null;
 		 System.out.println(args[0]); // Se puede borrar
 		 System.out.println(args.length); // Se puede borrar
 		
@@ -100,6 +111,11 @@ public class Main {
 				System.out.println("G option Selected");
 				// Genero las claves públicas y privadas
 				RSALibrary rsa = new RSALibrary();
+				rsa.generateKeys();
+				publicKey = obtainPublicKey();
+				privateKey = obtainPrivateKey();
+				System.out.println("Keys generated");
+				
 			}
 			break;
 		
@@ -138,6 +154,56 @@ public class Main {
 	}
 
 	
+
+	private static PrivateKey obtainPrivateKey() throws IOException, ClassNotFoundException {
+		
+		PrivateKey privateKey = null;
+		
+		File filePrivateKey = new File("./private.key");
+
+		//Si existe el fichero de clave privada, la obtenemos y desencriptamos
+		if(filePrivateKey.exists() && !filePrivateKey.isDirectory()) 
+		{ 
+			System.out.println("Existe private.key");
+			FileInputStream fileInput = new FileInputStream(filePrivateKey);
+			ObjectInputStream objectInputStream = new ObjectInputStream(fileInput);
+			privateKey = (PrivateKey) objectInputStream.readObject();
+			objectInputStream.close();
+	
+		}
+		else
+		{
+			System.out.println("Archivo de clave privada no creado");
+		}
+		
+		return privateKey;
+	}
+
+	private static PublicKey obtainPublicKey() throws IOException, ClassNotFoundException {
+		
+		PublicKey publicKey = null;
+		
+		File filePublicKey = new File("./public.key");
+
+		
+	
+		//Si existe el fichero de clave publica, la obtenemos y encriptamos
+		if(filePublicKey.exists() && !filePublicKey.isDirectory()) 
+		{ 
+			System.out.println("Existe public.key");
+			FileInputStream fileInput = new FileInputStream(filePublicKey);
+			ObjectInputStream objectInputStream = new ObjectInputStream(fileInput);
+			publicKey = (PublicKey) objectInputStream.readObject();
+			objectInputStream.close();
+		
+		}
+		else
+		{
+			System.out.println("Archivo de clave publica no creado");
+		}
+		return publicKey;
+	}
+
 	private static void anuncio() {
 		// TODO Auto-generated method stub
 		System.out.println("Warning Error-----");
