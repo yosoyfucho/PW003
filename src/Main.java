@@ -39,8 +39,11 @@ public class Main {
 		 int auxInt, difInt;
 		 auxInt = aux.length();
 		 System.out.println("Numero de bytes en aux es "+auxInt);
+		 
 		 String grp = null;
 		 byte[] auxByte = null;
+		 
+		 
 		 if (auxInt > 16)
 		 {
 			 /*
@@ -50,7 +53,7 @@ public class Main {
 			 System.out.println(grp);
 			 System.out.println(grp.length());
 			 auxByte = grp.getBytes();
-			 System.out.println("Array de bytes es: "+auxByte);
+			 System.out.println("Array de bytes es: "+ Arrays.toString(auxByte));
 
 		 }
 		 else
@@ -70,7 +73,7 @@ public class Main {
 				 {
 					 auxByte[i]=str2[i];
 				 }
-				 System.out.println("El array final es: " +auxByte);
+				 System.out.println("El array final es: " +Arrays.toString(auxByte));
 			 }
 			 else
 			 {
@@ -78,6 +81,9 @@ public class Main {
 				  * La passphrase introducida es de 16 bytes
 				  */
 				 System.out.println("mido 16");
+				 auxByte = aux.getBytes();
+				 System.out.println("El array final es: " +Arrays.toString(auxByte));
+
 			 }
 		 }
 		 
@@ -91,8 +97,9 @@ public class Main {
 			}
 			else
 			{
-				System.out.println("G introducida");
+				System.out.println("G option Selected");
 				// Genero las claves públicas y privadas
+				RSALibrary rsa = new RSALibrary();
 			}
 			break;
 		
