@@ -13,9 +13,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.Scanner;
 public class Main {
 
@@ -30,10 +34,9 @@ public class Main {
 
 	/**
 	 * @param args
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
+	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 
 		PublicKey publicKey = null;
@@ -52,7 +55,7 @@ public class Main {
 		 System.out.println("Numero de bytes en aux es "+auxInt);
 		 
 		 String grp = null;
-		 byte[] auxByte = null;
+		 byte[] passPhraseByte = null;
 		 
 		 
 		 if (auxInt > 16)
@@ -63,8 +66,8 @@ public class Main {
 			 grp = aux.substring(0, 16);
 			 System.out.println(grp);
 			 System.out.println(grp.length());
-			 auxByte = grp.getBytes();
-			 System.out.println("Array de bytes es: "+ Arrays.toString(auxByte));
+			 passPhraseByte = grp.getBytes();
+			 System.out.println("Array de bytes es: "+ Arrays.toString(passPhraseByte));
 
 		 }
 		 else
@@ -76,15 +79,15 @@ public class Main {
 				  */
 				 difInt = 16 - auxInt;
 				 System.out.println( "Hac falta un relleno de :"+difInt);
-				 auxByte = new byte [16];
-				 Arrays.fill(auxByte, (byte) 0);
-				 System.out.println("Array auxiliar es: "+auxByte);
+				 passPhraseByte = new byte [16];
+				 Arrays.fill(passPhraseByte, (byte) 0);
+				 System.out.println("Array auxiliar es: "+passPhraseByte);
 				 byte[] str2 = aux.getBytes();
 				 for (int i = 0; i< str2.length;i++)
 				 {
-					 auxByte[i]=str2[i];
+					 passPhraseByte[i]=str2[i];
 				 }
-				 System.out.println("El array final es: " +Arrays.toString(auxByte));
+				 System.out.println("El array final es: " +Arrays.toString(passPhraseByte));
 			 }
 			 else
 			 {
@@ -92,12 +95,15 @@ public class Main {
 				  * La passphrase introducida es de 16 bytes
 				  */
 				 System.out.println("mido 16");
-				 auxByte = aux.getBytes();
-				 System.out.println("El array final es: " +Arrays.toString(auxByte));
+				 passPhraseByte = aux.getBytes();
+				 System.out.println("El array final es: " +Arrays.toString(passPhraseByte));
 
 			 }
 		 }
-		 
+		
+		SymmetricCipher sym = new SymmetricCipher();
+		RSALibrary rsa = new RSALibrary();
+
 		 
 		switch(args[0]){
 		case "g":
@@ -108,14 +114,25 @@ public class Main {
 			}
 			else
 			{
-				System.out.println("G option Selected");
+				System.out.println("g option Selected");
+				System.out.println("Generating RSA...");
 				// Genero las claves públicas y privadas
-				RSALibrary rsa = new RSALibrary();
 				rsa.generateKeys();
-				publicKey = obtainPublicKey();
-				privateKey = obtainPrivateKey();
-				System.out.println("Keys generated");
+				// Claves publicas y privadas .key creadas 
+				System.out.println("\t Keys generated");
 				
+				// Cifrar con AES CBC la clave privada
+				
+				Path path = Paths.get("./private.key");
+				
+				byte[] privateKB = Files.readAllBytes(path);
+				
+				
+				byte[] cypher_privateKB = sym.encryptCBC(privateKB, passPhraseByte);
+
+				//Sobreescribir la clave privada
+				
+
 			}
 			break;
 		
@@ -127,7 +144,23 @@ public class Main {
 			}
 			else
 			{
-				System.out.println("E introducida");
+				System.out.println("e option Selected");
+				System.out.println("\t Encryption mode");
+				
+				publicKey = obtainPublicKey();
+				
+				//Descifrar primero con el passphrase la clave privada
+				
+				privateKey = obtainPrivateKey();
+				//Generamos clave de sesion aleatoria
+				String sessionKeyStr = randomString(16);
+				byte[] sessionKey = sessionKeyStr.getBytes();
+				//Ciframos source file con clave de session
+				Path pathSource = Paths.get("./sourceFile.txt");
+				byte[] source = Files.readAllBytes(pathSource);
+				byte[] cipherSource = sym.encryptCBC(source, sessionKey);
+				
+				
 			}
 			break;
 			
@@ -202,6 +235,19 @@ public class Main {
 			System.out.println("Archivo de clave publica no creado");
 		}
 		return publicKey;
+	}
+	
+	
+
+	private static String randomString( int len ){
+		
+		String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		Random rnd = new Random();
+		
+		StringBuilder sb = new StringBuilder( len );
+		for( int i = 0; i < len; i++ ) 
+			sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
+		return sb.toString();
 	}
 
 	private static void anuncio() {
