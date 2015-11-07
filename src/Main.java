@@ -183,18 +183,23 @@ public class Main {
 				byte[] encryptedPacket = outputStream.toByteArray();
 				
 				//Firmamos el paquete concatenado
-				byte[] signedPacket = rsa.sign(encryptedPacket, privateKey);
+				byte[] signature = rsa.sign(encryptedPacket, privateKey);
 
 				//Concatenamos el paquete concatenado con su firma				
 				ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
 				outputStream2.write(encryptedPacket);
-				outputStream2.write(signedPacket);
-				byte[] finalPacket = outputStream.toByteArray();
+				outputStream2.write(signature);
+				byte[] finalPacket = outputStream2.toByteArray();
 				
 				System.out.println("Size of total packet:          " + finalPacket.length);
-				System.out.println("Size of signature:             " + signedPacket.length);
+				System.out.println("Size of signature:             " + signature.length);
+				System.out.println("Size of encrypted packet:      " + encryptedPacket.length);
 				System.out.println("Size of encrypted source:      " + encryptedSource.length);
 				System.out.println("Size of encrypted session key: " + encryptedSessionKey.length);
+				System.out.println("Total length: " + finalPacket.length + " should be " + encryptedSessionKey.length + " + " + encryptedSource.length + " + " + signature.length);
+								
+				System.out.println("El array final es: " + Arrays.toString(finalPacket));
+				System.out.println("Array de firma es: " + Arrays.toString(signature));
 				
 				//Almacenamos el paquete resultante en el fichero destino				
 				FileOutputStream fileOutputStream = new FileOutputStream("./destinationFile.txt"); 
@@ -215,9 +220,92 @@ public class Main {
 			else
 			{
 				System.out.println("D introducida");
+				//Leemos el fichero encriptado y lo almacenamos
 				
 				
+				/*******
+				//TO DO : Cambiar el nombre de los ficheros para que entre por argumento!!!
 				
+				*******/
+				
+				
+				Path pathDestination = Paths.get("./DestinationFile.txt");
+				File fileDestination= new File("./DestinationFile.txt");
+
+				//Comprobamos que existe el fichero a desencriptar
+				if(fileDestination.exists() && !fileDestination.isDirectory()){
+
+					byte[] destination = Files.readAllBytes(pathDestination);
+					
+					//Comprobamos que es mayor de 256 (porque la firma y la clave son 128 cada una)
+					if(destination.length > 256){
+						
+						//Obtenemos la clave publica del fichero public.key
+						publicKey = obtainPublicKey();
+						
+						//Obtenemos la clave privada del fichero private.key desencriptandola con la passphrase						
+						privateKey = obtainPrivateKey(passPhraseByte);
+
+						/*Formato del paquete
+						 * ( encryptedSessionKey  | encryptedSource ) | signedPacket 
+						 * */
+						
+						int lengthWithoutSignature = destination.length-128;
+						
+						//Separamos la firma del resto del paquete (ultimos 128 Bytes)
+						byte[] signature= new byte[128];
+						byte[] packetToVerify= new byte[lengthWithoutSignature];
+						byte[] encryptedSessionKey = new byte[128];
+						byte[] txtToDecrypt = new byte[lengthWithoutSignature - 128];
+						
+						System.arraycopy(destination, lengthWithoutSignature, signature, 0, 128);
+						System.arraycopy(destination, 0, packetToVerify, 0, lengthWithoutSignature);
+						
+						System.out.println("El array final es: " + Arrays.toString(destination));
+						System.out.println("Array de firma es: " + Arrays.toString(signature));
+						
+
+						//Verificamos la firma
+						if(rsa.verify(packetToVerify, signature, publicKey) == true){
+							
+							System.out.println("La firma a verificar es correcta");
+							
+							int lengthOfTxt = packetToVerify.length-128;
+							
+							//Separamos la clave de sesion del texto a desencriptar
+							System.arraycopy(packetToVerify, 0, encryptedSessionKey, 0, 128);
+							System.arraycopy(packetToVerify, 128, txtToDecrypt, 0, lengthOfTxt);
+
+							//Desencriptamos la clave de sesion
+							byte[] decryptedSessionKey = rsa.decrypt(encryptedSessionKey, privateKey);
+							
+							//Desencripatamos el texto con la clave de sesion que hemos desencriptado
+							byte[] decryptedText = sym.decryptCBC(txtToDecrypt, decryptedSessionKey);
+							
+							FileOutputStream fileOutputStream = new FileOutputStream("./decryptedFile.txt"); 
+							fileOutputStream.write(decryptedText);
+							fileOutputStream.close();
+							System.out.println("Decrypted file saved in destinationFile.txt");
+
+
+
+						}
+						else
+						{
+							System.out.println("ERROR -- La firma a verificar no es correcta!");
+						}
+
+					}
+					else
+					{
+						System.out.println("ERROR -- El fichero es demasiado pequeño para contener una clave, una firma y texto!");
+					}
+				}
+				else
+				{
+					System.out.println("ERROR -- El fichero destinationFile.txt no existe!");
+				}
+
 			}
 			break;
 			
