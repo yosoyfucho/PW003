@@ -154,6 +154,8 @@ public class Main {
 			{
 				System.out.println("e option Selected");
 				System.out.println("\t Encryption mode");
+				String sourceFileName = args[1];
+				String destinationFileName = args[2];
 				
 				//Obtenemos la clave publica del fichero
 				publicKey = obtainPublicKey();
@@ -167,7 +169,7 @@ public class Main {
 				byte[] sessionKeyBytes = sessionKeyStr.getBytes();
 				
 				//Ciframos source file con clave de session
-				Path pathSource = Paths.get("./sourceFile.txt");
+				Path pathSource = Paths.get("./" + sourceFileName);
 				byte[] source = Files.readAllBytes(pathSource);
 				
 				byte[] encryptedSource = sym.encryptCBC(source, sessionKeyBytes);
@@ -202,10 +204,10 @@ public class Main {
 				System.out.println("Array de firma es: " + Arrays.toString(signature));
 				
 				//Almacenamos el paquete resultante en el fichero destino				
-				FileOutputStream fileOutputStream = new FileOutputStream("./destinationFile.txt"); 
+				FileOutputStream fileOutputStream = new FileOutputStream("./" + destinationFileName); 
 				fileOutputStream.write(finalPacket);
 				fileOutputStream.close();
-				System.out.println("Source file encrypted + session key encrypted signed and saved in destinationFile.txt");
+				System.out.println("Source file encrypted + session key encrypted signed and saved in " + destinationFileName);
 
 				
 			}
@@ -220,6 +222,7 @@ public class Main {
 			else
 			{
 				System.out.println("D introducida");
+				System.out.println("\t Decryption mode");
 				//Leemos el fichero encriptado y lo almacenamos
 				
 				
@@ -227,10 +230,11 @@ public class Main {
 				//TO DO : Cambiar el nombre de los ficheros para que entre por argumento!!!
 				
 				*******/
+				String fileToDecryptName = args[1];
+				String fileToSaveDecryptionName = args[2];
 				
-				
-				Path pathDestination = Paths.get("./DestinationFile.txt");
-				File fileDestination= new File("./DestinationFile.txt");
+				Path pathDestination = Paths.get("./"+fileToDecryptName);
+				File fileDestination= new File("./"+fileToDecryptName);
 
 				//Comprobamos que existe el fichero a desencriptar
 				if(fileDestination.exists() && !fileDestination.isDirectory()){
@@ -282,10 +286,10 @@ public class Main {
 							//Desencripatamos el texto con la clave de sesion que hemos desencriptado
 							byte[] decryptedText = sym.decryptCBC(txtToDecrypt, decryptedSessionKey);
 							
-							FileOutputStream fileOutputStream = new FileOutputStream("./decryptedFile.txt"); 
+							FileOutputStream fileOutputStream = new FileOutputStream("./"+fileToSaveDecryptionName); 
 							fileOutputStream.write(decryptedText);
 							fileOutputStream.close();
-							System.out.println("Decrypted file saved in destinationFile.txt");
+							System.out.println("Decrypted file saved in " + fileToSaveDecryptionName);
 
 
 
@@ -303,7 +307,7 @@ public class Main {
 				}
 				else
 				{
-					System.out.println("ERROR -- El fichero destinationFile.txt no existe!");
+					System.out.println("ERROR -- El fichero "+ fileToSaveDecryptionName +" no existe!");
 				}
 
 			}
