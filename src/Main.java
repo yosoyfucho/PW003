@@ -36,23 +36,21 @@ public class Main {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		// TODO Auto-generated method stub
-
+		
 		PublicKey publicKey = null;
 		PrivateKey privateKey = null;
 		
 		SymmetricCipher sym = new SymmetricCipher();
 		RSALibrary rsa = new RSALibrary();
 		
-		//System.out.println(args[0]); // Se puede borrar
-		//System.out.println(args.length); // Se puede borrar
-		
 		entrada = new Scanner(System.in);
 		System.out.println("Enter the passphrase");
 		 
 		String passphraseString;
 		passphraseString = entrada.next();
-		System.out.println(passphraseString);
+		
+		//System.out.println(passphraseString);
+		
 		int passphraseLength, difInt;
 		passphraseLength = passphraseString.length();
 		System.out.println("Numero de bytes de la passphrase introducida es " + passphraseLength);
@@ -60,60 +58,45 @@ public class Main {
 		String grp = null;
 		byte[] passPhraseByte = new byte [16];
 		 
-		 
+		//Almacenamos la passphrase segun su longitud (cortando o poniendo padding)
 		if (passphraseLength > 16)
 		{
-			/*
-			 * Corto el passphrase introducido a los 16 bytes primeros
-			 */
+			//Corto el passphrase introducido a los 16 bytes primeros
+			 
 			grp = passphraseString.substring(0, 16);
-			System.out.println(grp);
-			System.out.println(grp.length());
+			System.out.println("Passphrase of 16 Bytes: " + grp);
 			passPhraseByte = grp.getBytes();
-			System.out.println("Array de bytes es: " + Arrays.toString(passPhraseByte));
+			System.out.println("Passphrase Byte Array: " + Arrays.toString(passPhraseByte));
 
-		 }
+		}
 		else
 		{
-			if (passphraseLength!=16)
-			{
-				/*
-				 * La passphrase introducida es menor de 16 bytes
-				 */
-				/*difInt = 16 - passphraseLength;
-				System.out.println( "Hace falta un relleno de :"+difInt);
-				passPhraseByte = new byte [16];
-				Arrays.fill(passPhraseByte, (byte) 0);
-				System.out.println("Array auxiliar es: " + passPhraseByte);
-				byte[] str2 = passphraseString.getBytes();
-				for (int i = 0; i< str2.length;i++)
-				{
-					passPhraseByte[i]=str2[i];
-				}
-				*/
-				byte[] passPhraseWithoutPaddingByte = passphraseString.getBytes();
-				passPhraseByte = addPadding(passPhraseWithoutPaddingByte);
-				
-				System.out.println("El array final es: " + Arrays.toString(passPhraseByte));
+			if (passphraseLength == 16)
+			{				
+				//La passphrase introducida es de 16 bytes
+				 
+				System.out.println("Passphrase of 16: no padding needed");
+				passPhraseByte = passphraseString.getBytes();
+				System.out.println("Passphrase Byte Array: " + Arrays.toString(passPhraseByte));
 			}
 			else
 			{
-				/*
-				 * La passphrase introducida es de 16 bytes
-				 */
-				System.out.println("mido 16");
-				passPhraseByte = passphraseString.getBytes();
-				System.out.println("El array final es: " + Arrays.toString(passPhraseByte));
-
+				//Si es menor de 16, le ponemos padding PKCS#5 				
+				byte[] passPhraseWithoutPaddingByte = passphraseString.getBytes();
+				passPhraseByte = addPadding(passPhraseWithoutPaddingByte);
+				
+				System.out.println("Passphrase Byte Array: " + Arrays.toString(passPhraseByte));
+				
 			 }
 		 }
-
 		 
+		//Hacemos una accion u otra dependiendo el parametro introducido por argumento
 		switch(args[0]){
 		case "g":
 			
 			if (args.length != 1)
 			{
+				//Si no tiene el numero de argumentos necesario lanzamos un mensaje
 				anuncio();
 			}
 			else
@@ -133,7 +116,7 @@ public class Main {
 								
 				byte[] encryptedPrivateKeyBytes = sym.encryptCBC(privateKeyBytes, passPhraseByte);
 				
-				System.out.println("Longitud de los bytes encriptados : " + encryptedPrivateKeyBytes.length);
+				//System.out.println("Longitud de los bytes encriptados : " + encryptedPrivateKeyBytes.length);
 				
 				//Sobreescribir el archivo de clave privada				
 				FileOutputStream fileOutputStream = new FileOutputStream("./private.key"); 
@@ -148,37 +131,39 @@ public class Main {
 			
 			if (args.length !=3)
 			{
+				//Si no tiene el numero de argumentos necesario lanzamos un mensaje
 				anuncio();
 			}
 			else
 			{
 				System.out.println("e option Selected");
 				System.out.println("\t Encryption mode");
+				
+				//Almacenamos el nombre de los ficheros pasados por argumento
 				String sourceFileName = args[1];
 				String destinationFileName = args[2];
 				
 				//Obtenemos la clave publica del fichero
 				publicKey = obtainPublicKey();
 				
-				//Obtenemos la clave privada del fichero desencriptandola con la passphrase
-				
+				//Obtenemos la clave privada del fichero desencriptandola con la passphrase				
 				privateKey = obtainPrivateKey(passPhraseByte);
 				
 				//Generamos clave de sesion aleatoria
 				String sessionKeyStr = randomString(16);
 				byte[] sessionKeyBytes = sessionKeyStr.getBytes();
 				
-				//Ciframos source file con clave de session
+				//Leemos el fichero a almacenar
 				Path pathSource = Paths.get("./" + sourceFileName);
 				byte[] source = Files.readAllBytes(pathSource);
 				
+				//Ciframos source file con clave de session
 				byte[] encryptedSource = sym.encryptCBC(source, sessionKeyBytes);
 				
 				//Ciframos la clave de sesion con la clave publica del destinatario (en este caso la nuestra propia)
 				byte[] encryptedSessionKey = rsa.encrypt(sessionKeyBytes, publicKey);
 				
-				//Concatenamos la clave de sesion y el source file		
-				
+				//Concatenamos la clave de sesion y el source file					
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				outputStream.write(encryptedSessionKey);
 				outputStream.write(encryptedSource);
@@ -192,17 +177,9 @@ public class Main {
 				outputStream2.write(encryptedPacket);
 				outputStream2.write(signature);
 				byte[] finalPacket = outputStream2.toByteArray();
-				
-				System.out.println("Size of total packet:          " + finalPacket.length);
-				System.out.println("Size of signature:             " + signature.length);
-				System.out.println("Size of encrypted packet:      " + encryptedPacket.length);
-				System.out.println("Size of encrypted source:      " + encryptedSource.length);
-				System.out.println("Size of encrypted session key: " + encryptedSessionKey.length);
-				System.out.println("Total length: " + finalPacket.length + " should be " + encryptedSessionKey.length + " + " + encryptedSource.length + " + " + signature.length);
 								
-				System.out.println("El array final es: " + Arrays.toString(finalPacket));
-				System.out.println("Array de firma es: " + Arrays.toString(signature));
-				
+				//System.out.println("Total length: " + finalPacket.length + " should be " + encryptedSessionKey.length + " + " + encryptedSource.length + " + " + signature.length);		
+								
 				//Almacenamos el paquete resultante en el fichero destino				
 				FileOutputStream fileOutputStream = new FileOutputStream("./" + destinationFileName); 
 				fileOutputStream.write(finalPacket);
@@ -217,24 +194,26 @@ public class Main {
 			
 			if (args.length != 3)
 			{
+				//Si no tiene el numero de argumentos necesario lanzamos un mensaje
 				anuncio();			
 			}
 			else
 			{
 				System.out.println("D introducida");
 				System.out.println("\t Decryption mode");
-				//Leemos el fichero encriptado y lo almacenamos
 				
-				
-				/*******
-				//TO DO : Cambiar el nombre de los ficheros para que entre por argumento!!!
-				
-				*******/
+				/*
+				 * Formato del paquete
+				 * encryptedSessionKey | encryptedSource | signedPacket 
+				 * 
+				 * */
+				//Almacenamos el nombre de los ficheros pasados por argumento
 				String fileToDecryptName = args[1];
 				String fileToSaveDecryptionName = args[2];
 				
-				Path pathDestination = Paths.get("./"+fileToDecryptName);
-				File fileDestination= new File("./"+fileToDecryptName);
+				//Leemos el fichero encriptado y lo almacenamos
+				Path pathDestination = Paths.get("./" + fileToDecryptName);
+				File fileDestination= new File("./" + fileToDecryptName);
 
 				//Comprobamos que existe el fichero a desencriptar
 				if(fileDestination.exists() && !fileDestination.isDirectory()){
@@ -249,30 +228,26 @@ public class Main {
 						
 						//Obtenemos la clave privada del fichero private.key desencriptandola con la passphrase						
 						privateKey = obtainPrivateKey(passPhraseByte);
-
-						/*Formato del paquete
-						 * ( encryptedSessionKey  | encryptedSource ) | signedPacket 
-						 * */
 						
-						int lengthWithoutSignature = destination.length-128;
+						int lengthWithoutSignature = destination.length-128;						
 						
-						//Separamos la firma del resto del paquete (ultimos 128 Bytes)
 						byte[] signature= new byte[128];
 						byte[] packetToVerify= new byte[lengthWithoutSignature];
 						byte[] encryptedSessionKey = new byte[128];
 						byte[] txtToDecrypt = new byte[lengthWithoutSignature - 128];
 						
+						//Separamos la firma del resto del paquete (ultimos 128 Bytes)
 						System.arraycopy(destination, lengthWithoutSignature, signature, 0, 128);
 						System.arraycopy(destination, 0, packetToVerify, 0, lengthWithoutSignature);
 						
-						System.out.println("El array final es: " + Arrays.toString(destination));
-						System.out.println("Array de firma es: " + Arrays.toString(signature));
+						//System.out.println("El array final es: " + Arrays.toString(destination));
+						//System.out.println("Array de firma es: " + Arrays.toString(signature));
 						
 
 						//Verificamos la firma
 						if(rsa.verify(packetToVerify, signature, publicKey) == true){
 							
-							System.out.println("La firma a verificar es correcta");
+							System.out.println("Signature to verify is correct");
 							
 							int lengthOfTxt = packetToVerify.length-128;
 							
@@ -286,28 +261,27 @@ public class Main {
 							//Desencripatamos el texto con la clave de sesion que hemos desencriptado
 							byte[] decryptedText = sym.decryptCBC(txtToDecrypt, decryptedSessionKey);
 							
+							//Almacenamos el texto desencriptado en el fichero de destino
 							FileOutputStream fileOutputStream = new FileOutputStream("./"+fileToSaveDecryptionName); 
 							fileOutputStream.write(decryptedText);
 							fileOutputStream.close();
 							System.out.println("Decrypted file saved in " + fileToSaveDecryptionName);
 
-
-
 						}
 						else
 						{
-							System.out.println("ERROR -- La firma a verificar no es correcta!");
+							System.out.println("ERROR -- Signature to verify is not correct!");
 						}
 
 					}
 					else
 					{
-						System.out.println("ERROR -- El fichero es demasiado pequeño para contener una clave, una firma y texto!");
+						System.out.println("ERROR -- File is too small to contain key, signature and text!");
 					}
 				}
 				else
 				{
-					System.out.println("ERROR -- El fichero "+ fileToSaveDecryptionName +" no existe!");
+					System.out.println("ERROR -- File " + fileToSaveDecryptionName + " does NOT exists!");
 				}
 
 			}
@@ -319,11 +293,8 @@ public class Main {
 			break;
 		}
 		
-		
-		
 	}
 
-	
 
 	private static PrivateKey obtainPrivateKey(byte[] passPhraseByte) throws Exception {
 		
@@ -340,8 +311,8 @@ public class Main {
 			Path path = Paths.get("./private.key");
 			byte[] encryptedPrivateKeyBytes = Files.readAllBytes(path);
 			
-			System.out.println("Longitud archivo : " + (int) filePrivateKey.length());
-			System.out.println("Longitud de los bytes encriptados leidos : " + encryptedPrivateKeyBytes.length);
+			//System.out.println("Longitud archivo : " + (int) filePrivateKey.length());
+			//System.out.println("Longitud de los bytes encriptados leidos : " + encryptedPrivateKeyBytes.length);
 			
 			//Desencriptamos con la passphrase la clave privada
 			SymmetricCipher sym2 = new SymmetricCipher();				
@@ -370,7 +341,7 @@ public class Main {
 		}
 		else
 		{
-			System.out.println("Archivo de clave privada no creado");
+			System.out.println("ERROR -- File private.key does NOT exists");
 		}
 		
 		return privateKey;
@@ -385,7 +356,7 @@ public class Main {
 		//Si existe el fichero de clave publica, la obtenemos y encriptamos
 		if(filePublicKey.exists() && !filePublicKey.isDirectory()) 
 		{ 
-			System.out.println("Existe public.key");
+			System.out.println("File public.key found");
 			FileInputStream fileInput = new FileInputStream(filePublicKey);
 			ObjectInputStream objectInputStream = new ObjectInputStream(fileInput);
 			publicKey = (PublicKey) objectInputStream.readObject();
@@ -394,7 +365,7 @@ public class Main {
 		}
 		else
 		{
-			System.out.println("Archivo de clave publica no creado");
+			System.out.println("ERROR -- File public.key does NOT exists");
 		}
 		return publicKey;
 	}
@@ -402,7 +373,7 @@ public class Main {
 	
 
 	private static String randomString( int len ){
-		
+		//Genera un string aleatorio de longitud indicada por parametro
 		String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		Random rnd = new Random();
 		
@@ -414,7 +385,7 @@ public class Main {
 
 	private static void anuncio() {
 		// TODO Auto-generated method stub
-		System.out.println("Info-----");
+		System.out.println("WARNING-----");
 		System.out.println("This application needs:");
 		System.out.println("\t for g option: none arguments (java main g)");
 		System.out.println("\t for e option: source file and destination file (java main e input output) ");
